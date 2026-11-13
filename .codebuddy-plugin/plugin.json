@@ -1,0 +1,5 @@
+{
+  "name": "cbc-to",
+  "version": "1.0.0",
+  "description": "Send the current CodeBuddy session to another local user"
+}
