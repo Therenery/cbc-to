@@ -9,9 +9,18 @@ const state = {
   targets: [],
 };
 
+const WIDE =
+  /[\u1100-\u115F\u2E80-\u303E\u3041-\u33FF\u3400-\u4DBF\u4E00-\u9FFF\uA000-\uA4CF\uAC00-\uD7A3\uF900-\uFAFF\uFE30-\uFE4F\uFF00-\uFF60\uFFE0-\uFFE6]/;
+
+function widthOf(text) {
+  let w = 0;
+  for (const ch of String(text ?? '')) w += WIDE.test(ch) ? 2 : 1;
+  return w;
+}
+
 function pad(text, width) {
   const s = String(text ?? '');
-  const len = [...s].length;
+  const len = widthOf(s);
   return len >= width ? s : s + ' '.repeat(width - len);
 }
 
@@ -74,26 +83,32 @@ async function collect($) {
 
 function labelOf(t) {
   const account = t.account?.nickname || (t.pc ? 'Windows' : '未登录');
-  return `${pad(t.name, 8)} ${pad(account, 30)} ${t.pc ? '电脑' : ago(t.mtime)}`;
+  return `${pad(t.name, 8)} ${pad(account, 32)} ${t.pc ? '电脑' : ago(t.mtime)}`;
 }
 
 function buildTree() {
-  const rows = state.targets.map((t, i) => {
-    const hotkey = HOTKEYS[i] || '';
-    return h(
+  const rows = state.targets.map((t, i) =>
+    h(
       'Button',
       {
         key: `cbc-to:${t.name}`,
         label: labelOf(t),
-        hotkey,
+        hotkey: HOTKEYS[i] || '',
         plain: true,
+        autoFocus: i === 0,
       },
       [],
-    );
-  });
+    ),
+  );
   return h('Box', { flexDirection: 'column', paddingX: 1 }, [
-    h('Text', { text: PANE_TITLE, bold: true }, []),
-    h('Text', { text: '按前面的字符选择，Esc 退出', dimColor: true }, []),
+    h(
+      'Text',
+      {
+        text: 'Tab / ← → 移动，Enter 确认；按前面的数字直接选；Esc 取消',
+        dimColor: true,
+      },
+      [],
+    ),
     ...rows,
   ]);
 }
@@ -122,7 +137,8 @@ async function send($, target) {
   const home = await $.env.get('HOME');
   const cwd = await $.session.cwd();
   const sessionId = await $.session.id();
-  const src = `${home}/.codebuddy/projects/${slugOf(cwd)}/${sessionId}.jsonl`;
+  const dataRoot = (await $.env.get('CODEBUDDY_CONFIG_DIR')) || `${home}/.codebuddy`;
+  const src = `${dataRoot}/projects/${slugOf(cwd)}/${sessionId}.jsonl`;
   if (!(await $.fs.exists(src))) return `找不到当前会话文件：${src}`;
   const dstDir = `${target.home}/.codebuddy/projects/${slugOf(target.home)}`;
   await $.process.run(['mkdir', '-p', dstDir]);
@@ -130,7 +146,7 @@ async function send($, target) {
   if (cp && cp.exitCode !== 0) {
     return `复制失败：${(cp.stderr || '').trim() || cp.exitCode}`;
   }
-  const side = `${home}/.codebuddy/projects/${slugOf(cwd)}/${sessionId}`;
+  const side = `${dataRoot}/projects/${slugOf(cwd)}/${sessionId}`;
   if (await $.fs.exists(side)) {
     await $.process.run(['cp', '-a', side, `${dstDir}/`]);
   }
