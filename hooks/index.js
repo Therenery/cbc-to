@@ -76,7 +76,7 @@ async function collect($) {
     }
     targets.push({ name, home, account, mtime, pc: false });
   }
-  targets.sort((a, b) => b.mtime - a.mtime);
+  targets.sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
   targets.push({ name: 'pc', home: '', account: { nickname: 'Windows' }, mtime: 0, pc: true });
   return targets;
 }
@@ -104,7 +104,7 @@ function buildTree() {
     h(
       'Text',
       {
-        text: 'Tab / ← → 移动，Enter 确认；按前面的数字直接选；Esc 取消',
+        text: '↑ ↓ 移动，Enter 确认；按前面的数字直接选；Esc 取消',
         dimColor: true,
       },
       [],
