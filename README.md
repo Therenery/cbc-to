@@ -1,25 +1,35 @@
 # cbc-to
 
-给 CodeBuddy Code 的 `/to` 命令：把当前会话转给本机另一个用户，用对方的账号接着聊。
+两个 CodeBuddy Code 命令，用来在本机多个用户之间转交会话：
 
-## 做什么
+- `/to` — 把当前会话发给另一个用户，用对方的账号接着聊
+- `/resfrom` — 从另一个用户那里拉取历史会话，用当前账号接着聊
 
-- 输入 `/to`，弹出一个列表，列出本机所有装过 cbc 的用户，按用户名 A-Z 排序，显示各自登录的账号
-- 用上下方向键移动高亮，Enter 确认；也可以按每行前面的字符直接选
-- 当前会话的记录文件会复制到对方目录
-- 对方 `cd ~ && cbc -r` 就能看到这个会话，接着聊，消耗对方账号的额度
-- 也可以直接 `/to u8` 跳过面板
+## /to
+
+输入 `/to`，输入框下面会弹出本机所有装过 cbc 的用户，按用户名 A-Z 排序，带登录账号：
 
 ```
- Select recipient
- ↑ ↓ 移动，Enter 确认；按前面的数字直接选；Esc 取消
- 1: root     therenfoster@gmail.com      13 分钟前
- 2: u1       a18764007770@163.com        24 分钟前
- 3: u2       therenery2007@gmail.com     1 小时前
- ...
- 0: ubuntu   未登录                      从未使用
- a: pc       Windows                     电脑
+/to
+  /to                       把这个会话发给另一个用户 (arguments: [用户名])
+  root    therenfoster@gmail.com
+  u1      a18764007770@163.com
+  u2      therenery2007@gmail.com
+  ...
 ```
+
+↑↓ 选择，Enter 填入，再 Enter 发送。也可以直接 `/to u8`。
+
+发送时只复制会话文件到对方目录，不碰登录状态，所以每个用户还是自己的账号、自己的额度。对方 `cd ~ && cbc -r` 就能看到这个会话。
+
+## /resfrom
+
+```bash
+/resfrom u3          # 列出 u3 最近的 8 个会话
+/resfrom u3 2        # 把第 2 个拉到当前用户
+```
+
+拉取后在自己家目录运行 `cbc -r` 就能接着聊。
 
 ## 安装
 
@@ -47,29 +57,19 @@ cbc 的登录状态存在：
 ~/.codebuddy/projects/<工作目录>/<会话id>.jsonl
 ```
 
-两者是分开的。这个插件只复制会话文件，不碰登录状态，所以每个用户还是自己的账号、自己的额度。
-
-## 上下键支持
-
-cbc 2.184.0 的终端面板默认只认 Tab 和左右键，上下键没有接进面板导航。仓库里带了一个可选补丁：
-
-```bash
-python3 scripts/patch-tui-updown.py          # 打补丁（自动备份）
-python3 scripts/patch-tui-updown.py --revert # 还原
-```
-
-补丁改的是 cbc 安装目录里的 `dist/codebuddy.js` 一行判断，把 `upArrow` / `downArrow` 加进面板导航。cbc 升级后会被覆盖，需要重新打。不打补丁时面板仍可用 Tab 和左右键。
+两者是分开的。插件只复制会话文件，不碰登录状态。
 
 ## 限制
 
 - 对方要在自己家目录里运行 `cbc -r`。cbc 的恢复列表按当前工作目录找会话，在别的目录看不到
-- 复制的是发送那一刻的快照，你这边继续聊不会同步过去
+- 复制的是发送/拉取那一刻的快照，不会同步后续消息
+- `/resfrom` 要读别的用户的家目录，普通 Linux 权限下会失败；这台机器是 proot，所以能读
 - 电脑端（Windows）还没接上：ssh 能连，scp 被电脑的 sshd 拒了
 
 ## 环境
 
 - CodeBuddy Code 2.184.0 实测
-- 依赖 Mods（函数钩子）机制
+- 依赖 Mods（函数钩子）机制，`/to` 的候选列表走 `prompt.autocomplete`
 
 ## License
 
