@@ -5,6 +5,21 @@ function slugOf(dir) {
   return String(dir).replace(/^\//, '').replace(/\//g, '-');
 }
 
+const WIDE =
+  /[\u1100-\u115F\u2E80-\u303E\u3041-\u33FF\u3400-\u4DBF\u4E00-\u9FFF\uA000-\uA4CF\uAC00-\uD7A3\uF900-\uFAFF\uFE30-\uFE4F\uFF00-\uFF60\uFFE0-\uFFE6]/;
+
+function widthOf(text) {
+  let w = 0;
+  for (const ch of String(text ?? '')) w += WIDE.test(ch) ? 2 : 1;
+  return w;
+}
+
+function pad(text, width) {
+  const s = String(text ?? '');
+  const len = widthOf(s);
+  return len >= width ? s : s + ' '.repeat(width - len);
+}
+
 function ago(ms) {
   if (!ms) return '从未使用';
   const diff = Date.now() - ms;
@@ -186,7 +201,7 @@ export function register(on) {
       ...beneath,
       suggestions: list.map((t) => ({
         text: partial === null ? `/to ${t.name}` : t.name,
-        label: `${t.name}  ${t.account?.nickname || '未登录'}`,
+        label: `${pad(t.name, 8)} ${pad(t.account?.nickname || '未登录', 30)} ${ago(t.mtime)}`,
       })),
     };
   });
